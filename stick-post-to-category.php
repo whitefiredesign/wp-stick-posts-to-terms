@@ -14,10 +14,10 @@
  * Plugin Name: Stick Post To Category
  * Plugin URI: 	http://joebuckle.me
  * Description: Simple category-specific sticky posts
- * Version:     0.0.1
+ * Version:     0.0.2
  * Author:      Joe Buckle
  * Author URI:  http://joebuckle.me
- * Text Domain: stick-post-to-category
+ * Text Domain: stick-post-to-categoryth
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
@@ -28,7 +28,13 @@ if ( ! defined( 'WPINC' ) ) {
 
 class StickyPost {
 
-    private static $instance = null;
+    private static $instance        = null;
+
+    private static $disabled_tax    = array('post_tag');
+
+    private static $post_states     = array(
+        'category_sticky'   => 'Category Sticky'
+    );
 
     /**
      * Method used to provide a single instance of this
@@ -47,6 +53,8 @@ class StickyPost {
     private function __construct() {
         add_action( 'add_meta_boxes',   array( $this, 'add_meta_box' ) );
         add_action( 'save_post',        array( $this, 'save_meta_box' ) );
+
+        add_filter( 'display_post_states', array($this, 'post_state'));
     }
 
     public function add_meta_box() {
@@ -80,26 +88,31 @@ class StickyPost {
          * Get available taxonomies
          */
         $taxonomies = get_taxonomies();
+
         foreach($taxonomies as $k => $v) {
-            $tax = get_taxonomy($v);
 
-            /**
-             * Check first that terms are actually assigned
-             * in any taxonomy
-             */
-            if (is_array($terms = get_the_terms($post->ID, $tax->name))) {
-                $output .= '<h4>' . $tax->label . '</h4>';
+            if(!in_array($k, self::$disabled_tax)) {
 
-                $output .= '<select autocomplete="off" name="category_stickies['.$tax->name.']">';
-                $output .= '<option value="0">' . __('Select a '.$tax->name.'...', 'stick-post-to-category') . '</option>';
+                $tax = get_taxonomy($v);
 
-                foreach ($terms as $term) {
-                    $output .= '<option value="' . $term->term_id . '" ' . selected(get_post_meta($post->ID, 'category_stickies_' . $tax->name, true), $term->term_id, false) . '>';
-                    $output .= $term->name;
-                    $output .= '</option>';
+                /**
+                 * Check first that terms are actually assigned
+                 * in any taxonomy
+                 */
+                if (is_array($terms = get_the_terms($post->ID, $tax->name))) {
+                    $output .= '<h4>' . $tax->label . '</h4>';
+
+                    $output .= '<select autocomplete="off" name="category_stickies[' . $tax->name . ']">';
+                    $output .= '<option value="0">' . __('Select a ' . $tax->name . '...', 'stick-post-to-category') . '</option>';
+
+                    foreach ($terms as $term) {
+                        $output .= '<option value="' . $term->term_id . '" ' . selected(get_post_meta($post->ID, 'category_stickies_' . $tax->name, true), $term->term_id, false) . '>';
+                        $output .= $term->name;
+                        $output .= '</option>';
+                    }
+
+                    $output .= '</select>';
                 }
-
-                $output .= '</select>';
             }
         }
 
@@ -116,6 +129,42 @@ class StickyPost {
                     } else {
                         update_post_meta($post_id, 'category_stickies_' . $k, $v);
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param $post_states
+     * Added 0.0.2
+     * Displays the post state in the admin posts table
+     */
+    public function post_state($post_states) {
+
+        $post_states    = array_merge($post_states, self::$post_states);
+        $post_id        = get_the_ID();
+
+        if(!empty($post_states)) {
+            foreach($post_states as $key=>&$state) {
+                switch ($key) {
+                    case 'sticky' :
+                        echo '<br />Sticky | home';
+                        break;
+
+                    case 'category_sticky' :
+                        $taxonomies = get_taxonomies();
+                        foreach($taxonomies as $k => $v) {
+
+                            if(!in_array($k, self::$disabled_tax)) {
+                                $tax    = get_taxonomy($v);
+                                $sticky = get_post_meta($post_id, 'category_stickies_' . $tax->name, true);
+                                $term   = get_term_by('id', absint($sticky), $tax->name);
+                                if ($sticky) {
+                                    echo '<br />Sticky | ' . $tax->name . ' | ' . $term->name;
+                                }
+                            }
+                        }
+                        break;
                 }
             }
         }
