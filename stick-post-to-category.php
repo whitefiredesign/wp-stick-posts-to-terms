@@ -28,13 +28,20 @@ if ( ! defined( 'WPINC' ) ) {
 
 class StickyPost {
 
-    private static $instance        = null;
+    private static $instance            = null;
 
-    private static $disabled_tax    = array('post_tag');
+    private static $disabled_tax        = array('post_tag', 'format', 'tag', 'type');
 
-    private static $post_states     = array(
+    private static $disabled_post_types = array('attachment');
+
+    private static $post_states         = array(
         'category_sticky'   => 'Category Sticky'
     );
+    
+
+    public static function allowed() {
+        return get_option('category-sticky-allowed');
+    }
 
     /**
      * Method used to provide a single instance of this
@@ -51,10 +58,24 @@ class StickyPost {
     }
 
     private function __construct() {
-        add_action( 'add_meta_boxes',   array( $this, 'add_meta_box' ) );
-        add_action( 'save_post',        array( $this, 'save_meta_box' ) );
 
-        add_filter( 'display_post_states', array($this, 'post_state'));
+        if( ! is_admin() ) {
+            return false;
+        }
+
+        add_action( 'add_meta_boxes',           array( $this, 'add_meta_box'));
+        add_action( 'save_post',                array( $this, 'save_meta_box'));
+
+        add_filter( 'display_post_states',      array( $this, 'post_state'));
+
+        add_action( 'restrict_manage_posts',    array( $this, 'filter'));
+        add_filter( 'parse_query',              array( $this, 'sort'));
+
+
+        // Settings page
+        add_action('admin_menu', function() {
+            add_submenu_page('options-general.php', 'Category Stickies', 'Category Stickies', 'manage_options', 'manage-stickies', array($this, 'settings'));
+        });
     }
 
     public function add_meta_box() {
@@ -84,9 +105,7 @@ class StickyPost {
 
         $output = '<p>Note: You can only stick posts to terms you have assigned to them.</p>';
 
-        /**
-         * Get available taxonomies
-         */
+
         $taxonomies = get_taxonomies();
 
         foreach($taxonomies as $k => $v) {
@@ -148,7 +167,7 @@ class StickyPost {
             foreach($post_states as $key=>&$state) {
                 switch ($key) {
                     case 'sticky' :
-                        echo '<br />Sticky | home';
+                        echo '<br /><span class="dashicons dashicons-sticky"></span> home';
                         break;
 
                     case 'category_sticky' :
@@ -160,7 +179,7 @@ class StickyPost {
                                 $sticky = get_post_meta($post_id, 'category_stickies_' . $tax->name, true);
                                 $term   = get_term_by('id', absint($sticky), $tax->name);
                                 if ($sticky) {
-                                    echo '<br />Sticky | ' . $tax->name . ' | ' . $term->name;
+                                    echo '<br /><span class="dashicons dashicons-sticky"></span> ' . $tax->name . ' | ' . $term->name;
                                 }
                             }
                         }
@@ -196,7 +215,7 @@ class StickyPost {
 
         $args = array(
             'post_status'           => 'publish',
-            'post_type'             => 'post',
+            'post_type'             => array_keys(self::allowed()),
             'posts_per_page'        => $count,
             'ignore_sticky_posts'   => true,
             'meta_query'        => array(
@@ -213,8 +232,137 @@ class StickyPost {
         $object->query = new WP_Query($args);
         $object->post_ids = wp_list_pluck( $object->query->posts, 'ID' );
         
-        
         return $object;
+    }
+
+
+    /**
+     * Post admin table filter
+     */
+    public function filter() {
+        global $typenow;
+        $select = array();
+        $allowed = self::allowed();
+
+        if (in_array($typenow, array_keys($allowed))) {
+
+            $taxonomies = get_taxonomies();
+
+            $i = 0;
+            foreach($taxonomies as $k => $v) {
+
+                if (isset($allowed[$typenow]) && in_array($k, $allowed[$typenow])) {
+
+                    $tax    = get_taxonomy($v);
+                    $terms  = get_terms(array(
+                        'taxonomy' => $tax->name
+                    ));
+                    $select[$i]['optgroup']     = $tax->name;
+                    $select[$i]['values']       = array();
+                    foreach($terms as $term) {
+                        $select[$i]['values'][$term->name]    = $term->term_id;
+                    }
+
+                    $i++;
+                }
+            }
+
+            ?>
+            <select name="filter-sticky">
+                <option value="">Sticky</option>
+                <?php
+                $filter_sticky = explode(';', urldecode($_GET['filter-sticky']));
+
+                foreach($select as $group) {
+                    echo '<optgroup label="'.$group['optgroup'].'">';
+                    foreach ($group['values'] as $label => $value) {
+                        printf(
+                            '<option value="%s"%s>%s</option>',
+                            $group['optgroup'].';'.$value,
+                            $value == $filter_sticky[1]? ' selected="selected"':'',
+                            $label
+                        );
+                    }
+                }
+
+                ?>
+            </select>
+            <?php
+        }
+    }
+
+
+    /**
+     * @param $query
+     * Custom sort by taxonomy for post table
+     */
+    public function sort($query) {
+
+        global $typenow;
+        global $pagenow;
+
+        if(in_array($typenow, array_keys(self::allowed()))) {
+            $q_vars    = &$query->query_vars;
+
+            if ( $pagenow == 'edit.php' && isset($q_vars['post_type']) && isset($_GET['filter-sticky'])) {
+
+                $filter_sticky = explode(';', urldecode($_GET['filter-sticky']));
+
+                $q_vars['meta_query'] = array(
+                    array(
+                        'key'       =>  'category_stickies_' . $filter_sticky[0],
+                        'value'     =>  $filter_sticky[1],
+                        'compare'   => 'IN'
+                    )
+                );
+            }
+        }
+    }
+
+    /**
+     * The settings page
+     */
+    public function settings() {
+        echo '<h1>Category stickies settings</h1>';
+
+        if(isset($_POST['category-sticky-allowed'])) {
+            update_option('category-sticky-allowed', $_POST['category-sticky-allowed']);
+        }
+
+        $allowed = get_option('category-sticky-allowed');
+
+        echo '<form method="post" action="">';
+        $types = get_post_types(array(
+            'public'                => true,
+            'publicly_queryable'    => true
+        ));
+
+        foreach($types as $type) {
+            if(!in_array($type, self::$disabled_post_types)) {
+                echo '<ul>';
+                echo '<li><label><b>' . $type . '</b></label></li>';
+                $taxonomy_objects = get_object_taxonomies( $type, 'objects' );
+                if($taxonomy_objects) {
+                    echo '<ul>';
+                    foreach($taxonomy_objects as $tax) {
+                        $checked = '';
+                        if(isset($allowed[$type]) && in_array($tax->rewrite['slug'], $allowed[$type])) {
+                            $checked = 'checked';
+                        }
+                        if(!in_array($tax->rewrite['slug'], self::$disabled_tax)) {
+                            echo '<li><label><input type="checkbox" name="category-sticky-allowed['.$type.'][]" value="'.$tax->rewrite['slug'].'" '.$checked.'/>' . $tax->label . '</li>';
+                        }
+                    }
+                    echo '</ul>';
+                }
+
+                echo '</ul>';
+            }
+        }
+
+        echo '<button type="submit">Save</button>';
+        echo '</form>';
+
     }
 
 }

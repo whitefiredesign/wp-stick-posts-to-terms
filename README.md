@@ -3,7 +3,7 @@ Contributors: bambattajb
 Tags: categories, post
 Requires at least: 4.4.2
 Tested up to: 4.4.2
-Stable tag: 0.0.1
+Stable tag: 0.0.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -70,6 +70,11 @@ $main_query = new WP_Query(array(
 ));
 
 ```
+
+### Version History
+0.0.2
+Added sticky filter in posts table
+Added options page to turn on/off taxonomies for post types
 
 ##TODOS
 - Add options panel 
