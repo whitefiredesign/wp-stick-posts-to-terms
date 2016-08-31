@@ -1,23 +1,23 @@
 <?php
 /**
- * Stick Post To Category
+ * Stick Posts To Term
  *
- * Simple category-specific sticky posts
+ * Simple tern-specific sticky posts
  *
- * @package   Stick_Post_To_Category
+ * @package   Stick_Posts_To_Term
  * @author    Joe Buckle <joe@white-fire.co.uk>
  * @license   GPL-2.0+
  * @link      http://joebuckle.me
  * @copyright 2016 Joe Buckle
  *
  * @wordpress-plugin
- * Plugin Name: Stick Post To Category
+ * Plugin Name: Stick Posts To Tern
  * Plugin URI: 	http://joebuckle.me
- * Description: Simple category-specific sticky posts
- * Version:     0.0.2
+ * Description: Simple term-specific sticky posts
+ * Version:     0.0.3
  * Author:      Joe Buckle
  * Author URI:  http://joebuckle.me
- * Text Domain: stick-post-to-categoryth
+ * Text Domain: stick-posts-to-term
  * License:     GPL-2.0+
  * License URI: http://www.gnu.org/licenses/gpl-2.0.txt
  */
@@ -37,7 +37,6 @@ class StickyPost {
     private static $post_states         = array(
         'category_sticky'   => 'Category Sticky'
     );
-    
 
     public static function allowed() {
         return get_option('category-sticky-allowed');
@@ -207,15 +206,19 @@ class StickyPost {
      * @param bool/int $count
      * @return WP_Query
      */
-    public static function query($tax, $term, $count=false) {
+    public static function query($tax, $term, $post_types=false, $count=false) {
 
+        if(!$post_types) {
+            $post_types = array_keys(self::allowed());
+        }
+        
         if(!$count) {
             $count = 1;
         }
 
         $args = array(
             'post_status'           => 'publish',
-            'post_type'             => array_keys(self::allowed()),
+            'post_type'             => $post_types,
             'posts_per_page'        => $count,
             'ignore_sticky_posts'   => true,
             'meta_query'        => array(

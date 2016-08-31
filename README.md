@@ -1,4 +1,4 @@
-#Stick Post To Category
+#Stick Posts To Term
 Contributors: bambattajb
 Tags: categories, post
 Requires at least: 4.4.2
@@ -8,7 +8,7 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 ##Description
-This adds simple category-specific sticky posts functionality
+This adds simple term-specific sticky posts functionality
 I created this plugin because I wanted to give the content manager flexibility to be able to set sticky posts to any category or taxonomy term.
 
 It is more of a developer tool. It will not just work 'out of the box'. You need to add code in the theme template files to get it to work.
@@ -72,12 +72,15 @@ $main_query = new WP_Query(array(
 ```
 
 ### Version History
+0.0.3
+Added new argument `post_types` to `StickyPost::query`
+Changed name from `stick posts to category` to `stick posts to term`
+
 0.0.2
 Added sticky filter in posts table
 Added options page to turn on/off taxonomies for post types
 
 ##TODOS
 - Add options panel 
-- [option] select enabled post types (at the moment it's all post types)
 - [option] select enabled taxonomies
 - Create code-free default functionality
