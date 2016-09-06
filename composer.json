@@ -1,8 +1,9 @@
 {
   "name": "bambattajb/wp-stick-posts-to-term",
+  "type": "library",
   "description": "This adds simple term-specific sticky posts functionality",
   "license": "MIT",
-  "version": "1.0.1-stable",
+  "version": "1.0.1",
   "minimum-stability": "stable",
   "require": {
     "php": "^5.3.3 || ^7.0"
@@ -16,8 +17,6 @@
     }
   ],
   "autoload": {
-    "psr-4": {
-      "StickyPost\\": "stick-post-to-term.php"
-    }
+    "classmap": ["src/StickyPost.php"]
   }
 }
