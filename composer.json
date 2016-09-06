@@ -1,0 +1,7 @@
+{
+  "name": "bambattajb/wp-stick-posts-to-term",
+  "description": "This adds simple term-specific sticky posts functionality",
+  "require": {
+    "php": "^5.3.3 || ^7.0"
+  }
+}
