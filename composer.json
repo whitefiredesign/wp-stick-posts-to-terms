@@ -1,7 +1,16 @@
 {
   "name": "bambattajb/wp-stick-posts-to-term",
   "description": "This adds simple term-specific sticky posts functionality",
+  "license": "MIT",
   "require": {
     "php": "^5.3.3 || ^7.0"
-  }
+  },
+  "authors": [
+    {
+      "name": "Joe Buckle",
+      "email": "joe@white-fire.co.uk",
+      "homepage": "https://joebuckle.me",
+      "role": "Developer"
+    }
+  ]
 }
