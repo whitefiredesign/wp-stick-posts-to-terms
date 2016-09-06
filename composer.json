@@ -3,6 +3,7 @@
   "description": "This adds simple term-specific sticky posts functionality",
   "license": "MIT",
   "version": "1.0.0-stable",
+  "minimum-stability": "stable",
   "require": {
     "php": "^5.3.3 || ^7.0"
   },
@@ -13,5 +14,10 @@
       "homepage": "https://joebuckle.me",
       "role": "Developer"
     }
-  ]
+  ],
+  "autoload": {
+    "psr-4": {
+      "StickyPost\\": "stick-post-to-term.php"
+    }
+  }
 }
