@@ -14,7 +14,7 @@
  * Plugin Name: Stick Posts To Tern
  * Plugin URI: 	http://joebuckle.me
  * Description: Simple term-specific sticky posts
- * Version:     0.0.3
+ * Version:     1.0.0
  * Author:      Joe Buckle
  * Author URI:  http://joebuckle.me
  * Text Domain: stick-posts-to-term

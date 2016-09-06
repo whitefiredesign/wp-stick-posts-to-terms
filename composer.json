@@ -2,7 +2,7 @@
   "name": "bambattajb/wp-stick-posts-to-term",
   "description": "This adds simple term-specific sticky posts functionality",
   "license": "MIT",
-  "version": "0.0.3",
+  "version": "1.0.0",
   "require": {
     "php": "^5.3.3 || ^7.0"
   },
