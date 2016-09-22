@@ -347,6 +347,58 @@ class StickyPost {
 
     }
 
+
+    /**
+     * A handy function that gets all stickies available
+     * 
+     * @param string $type
+     * @param bool $tax
+     * @param bool $term_id
+     * @return array|bool|WP_Query
+     */
+    public static function get_stickies($type='ids', $tax = false, $term_id = false) {
+        global $wpdb;
+
+        $output     = false;
+        $meta_key   = "category_stickies_%";
+        $meta_val   = "";
+        
+        if($tax) {
+            $meta_key = "category_stickies_" . $tax;
+        }
+        
+        if($term_id) {
+            $meta_val = "AND meta_value=%s";
+        }
+        
+        $results = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT post_id FROM $wpdb->postmeta WHERE meta_key LIKE %s $meta_val", $meta_key, $term_id
+            ), OBJECT
+        );
+
+        $post_ids = array();
+        foreach($results as $result) {
+            foreach($result as $k => $v) {
+                $post_ids[] = $v;
+            }
+        }
+
+
+        if($type=='ids') {
+            $output = $post_ids;
+        }
+
+        if($type=='query') {
+            $output = new WP_Query(array(
+                'post_status' => 'publish',
+                'post__in' => $post_ids
+            ));
+        }
+
+        return $output;
+    }
+
     public static function theme_activate() {
         add_action('init', 'StickyPost::get_instance');
     }
