@@ -3,7 +3,7 @@ Contributors: bambattajb
 Tags: categories, post
 Requires at least: 4.4.2
 Tested up to: 4.4.2
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -72,6 +72,10 @@ $main_query = new WP_Query(array(
 ```
 
 ### Version History
+1.0.3
+Fixed get_stickies('query') argument returns full results when no IDs found
+Fixed get_stickies('query') returns more results than expected
+
 1.0.2
 Added new function StickyPost::get_stickies([string] $type='ids', [string] $tax = false, [int], $term = false)
 

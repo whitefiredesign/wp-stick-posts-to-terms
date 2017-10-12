@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * The main class for querying StickyPosts
+ * Class StickyPost
+ */
+
 class StickyPost {
 
     private static $instance            = null;
@@ -35,7 +40,7 @@ class StickyPost {
         return self::$instance;
     }
 
-    private function __construct() {
+    protected function __construct() {
 
         if( ! is_admin() ) {
             return false;
@@ -138,6 +143,10 @@ class StickyPost {
      */
     public function post_state($post_states) {
 
+        if(!is_array($post_states)) {
+            return false;
+        }
+
         $post_states    = array_merge($post_states, self::$post_states);
         $post_id        = get_the_ID();
 
@@ -145,28 +154,37 @@ class StickyPost {
             foreach($post_states as $key=>&$state) {
                 switch ($key) {
                     case 'sticky' :
-                        echo '<br /><span class="dashicons dashicons-sticky"></span> home';
+                        echo '<br />' . self::home_sticky_placement();
                         break;
 
                     case 'category_sticky' :
-                        $taxonomies = get_taxonomies();
-                        foreach($taxonomies as $k => $v) {
-
-                            if(!in_array($k, self::$disabled_tax)) {
-                                $tax    = get_taxonomy($v);
-                                $sticky = get_post_meta($post_id, 'category_stickies_' . $tax->name, true);
-                                $term   = get_term_by('id', absint($sticky), $tax->name);
-                                if ($sticky) {
-                                    echo '<br /><span class="dashicons dashicons-sticky"></span> ' . $tax->name . ' | ' . $term->name;
-                                }
-                            }
-                        }
+                        echo '<br />' . self::get_sticky_placement($post_id);
                         break;
                 }
             }
         }
     }
 
+    public static function get_sticky_placement($post_id) {
+        $taxonomies = get_taxonomies();
+        foreach($taxonomies as $k => $v) {
+
+            if(!in_array($k, self::$disabled_tax)) {
+                $tax    = get_taxonomy($v);
+                $sticky = get_post_meta($post_id, 'category_stickies_' . $tax->name, true);
+                $term   = get_term_by('id', absint($sticky), $tax->name);
+                if ($sticky) {
+                    return '<span class="dashicons dashicons-sticky"></span> ' . $tax->name . ' | ' . $term->name;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static function home_sticky_placement() {
+        return '<span class="dashicons dashicons-sticky"></span> home';
+    }
 
     private function user_can_save( $post_id, $nonce ) {
 
@@ -390,13 +408,30 @@ class StickyPost {
         }
 
         if($type=='query') {
-            $output = new WP_Query(array(
-                'post_status' => 'publish',
-                'post__in' => $post_ids
-            ));
+
+            if(empty($post_ids)) {
+                $post_ids = array();
+            }
+            
+            $home_stickies  = get_option('sticky_posts');
+
+            if($home_stickies) {
+                $post_ids = array_merge($home_stickies, $post_ids);
+            }
+
+            if(!empty($post_ids)) {
+
+                $output = new WP_Query(array(
+                    'post_status' => 'publish',
+                    'post__in' => $post_ids
+                ));
+                return $output;
+
+            } else {
+                throw new Exception('No results found');
+            }
         }
 
-        return $output;
     }
 
     public static function theme_activate() {
