@@ -379,7 +379,7 @@ class StickyPost {
 
         $output     = false;
         $meta_key   = "category_stickies_%";
-        $meta_val   = "";
+        $meta_val   = false;
         
         if($tax) {
             $meta_key = "category_stickies_" . $tax;
@@ -388,12 +388,21 @@ class StickyPost {
         if($term_id) {
             $meta_val = "AND meta_value=%s";
         }
-        
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT post_id FROM $wpdb->postmeta WHERE meta_key LIKE %s $meta_val", $meta_key, $term_id
-            ), OBJECT
-        );
+
+        if($meta_key && $meta_val) {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT post_id FROM $wpdb->postmeta WHERE meta_key LIKE %s $meta_val", $meta_key, $term_id
+                ), OBJECT
+            );
+        } else {
+            $results = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT post_id FROM $wpdb->postmeta WHERE meta_key LIKE %s", $meta_key
+                ), OBJECT
+            );
+        }
+
 
         $post_ids = array();
         foreach($results as $result) {
